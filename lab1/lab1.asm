@@ -124,6 +124,27 @@ jr $ra
 determinant:
 ############################## Part 3: your code begins here ###
 
+# determinant from linera algebra follows det(A) = ad - bc
+# a b -> $a0 upper and lower bits
+# c d -> $a1 uper and lower bits
+# sign extension is important here to perseve sign bits!!! 
+
+# extract each variable by using bitwise operations like shifting
+sra $t0, $a0, 16 # shift $a0 right by 16 bits -> value of 'a'
+andi $t1, $a0, 0xFFFF # binary(1111 1111 1111 1111) only 2 bytes since we want the lower half of the number -> value of 'b'
+sll $t1, $t1, 16       # Shift left 16 bits
+sra $t1, $t1, 16       # Sign-extend lower 16 bits for 'b'
+
+
+sra $t2, $a1 16 # value of 'c'
+andi $t3, $a1, 0xFFFF # value of 'd'
+sll $t3, $t3, 16       # Shift left 16 bits
+sra $t3, $t3, 16       # Sign-extend lower 16 bits for 'd'
+
+mul $t4, $t0, $t3 # a * d -> $t4
+mul $t5, $t1, $t2 # b * c -> $t5
+
+sub $v0, $t4, $t5
 
 
 ############################## Part 3: your code ends here ###
