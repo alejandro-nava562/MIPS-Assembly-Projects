@@ -26,7 +26,25 @@
 swap_bits:
 ############################## Part 1: your code begins here ###
 
+# Utilize "masks" for the AND operator to extract the even and odd bits that are present in our number
+# shift the bits around -> use OR operator to combine both even and odd bits thereafter
 
+# 32 bit numebr = 4 bytes = 2 hex numbers per byte = 4 bits per hex number
+li $t0, 0xAAAAAAAA # Extract the odd bits (binary: 10101010101010101010101010101010)
+li $t1, 0x55555555 # Extract the even bits (binary: the opposite of above)
+
+# Isolate and extract the even/odd bits
+# %a0 is the default input register for arguments
+
+and $t2, $a0, $t0 # $t2 will now have the extracted odd bits
+and $t3 $a0, $t1 # t3 will now have the extraced even bits
+
+#shifting time
+srl $t2, $t2, 1 # shift the odd bits to the right
+sll $t3, $t3, 1 # shift the even bits to the left
+
+# combine
+or $v0, $t2, $t3
 
 ############################## Part 1: your code ends here ###
 jr $ra
