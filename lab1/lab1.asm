@@ -34,7 +34,7 @@ li $t0, 0xAAAAAAAA # Extract the odd bits (binary: 10101010101010101010101010101
 li $t1, 0x55555555 # Extract the even bits (binary: the opposite of above)
 
 # Isolate and extract the even/odd bits
-# %a0 is the default input register for arguments
+# %$a0 is the default input register for arguments
 
 and $t2, $a0, $t0 # $t2 will now have the extracted odd bits
 and $t3 $a0, $t1 # t3 will now have the extraced even bits
@@ -64,6 +64,46 @@ jr $ra
 triple_range:
 ############################### Part 2: your code begins here ##
 
+# find smallest and largest numbers 
+# need branching to determine what to do after comparing values
+slt $t0, $a0, $a1 # If $a0 < $a1, %t0 = 1, else $t0 = 0
+beq $t0, $zero, else_a1_smaller # if $t0 is 0, it means $a1 is smaller, so skip
+move $t1, $a0 # case for when $a0 is smaller of the two
+j compare_to_a2 # jump to compare whatever value we have against $a2
+
+else_a1_smaller:
+move $t1, $a1 #a1 is the smaller number here so we want to set $t1 to the smaller number
+
+compare_to_a2:
+slt $t0, $a2, $t1 # case for if $a2 is the smallest
+beq $t0, $zero, find_largest # case for when $a2 is not the smallest, therefore we don't want to update $t1 with $a2's value
+move $t1, $a2 # a2 is smallest number here so let's store it
+
+# $t1 is the final register for the smallest number
+
+#find the largest number now
+find_largest:
+slt $t0, $a0, $a1 # if $a0 < $a1 -> $t0 = 1
+beq $t0, $zero, else_a0_larger # if $a0 is larger, then $t0 will have value 0
+move $t2, $a1 # a1 is larger in this case so store it to compare to $a2
+j compare_to_a2_largest
+
+else_a0_larger:
+move $t2, $a0
+
+compare_to_a2_largest:
+slt $t0, $t2, $a2 # if (largest so far) < $a2 -> $t0 = 1
+beq $t0, $zero, after_comparison # (largest so far) > $a2
+move $t2, $a2 # a2 is largest in this case so store it
+
+after_comparison: # a2 was smaller so no updating needed, we already found the largest number
+
+# t2 is the final register for the largest number
+
+# sum and multiply numbers together
+add $t3, $t1, $t2
+li $t0, 3 # load 3 for multiplication
+mul $v0, $t3, $t0 # store the final result
 
 
 ############################### Part 2: your code ends here  ##
