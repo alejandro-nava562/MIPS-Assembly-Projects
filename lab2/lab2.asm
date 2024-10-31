@@ -32,10 +32,44 @@
 # in array, named fib_array.
 # 
 fibonacci:
+
 # $a0: Number of elements. 
 # fib_array: The destination array.
 ################## Part 1: your code begins here ###############
+	 # Input:
+    #   $a0 - Number of Fibonacci elements to compute
+    # Output:
+    #   Stores the Fibonacci sequence up to N elements in fib_array
 
+    # Initialize the first two Fibonacci values
+    li $t0, 0              # $t0 holds F0, which is 0
+    li $t1, 1              # $t1 holds F1, which is 1
+    la $t2, fib_array      # Load the starting address of fib_array into $t2
+
+    sw $t0, 0($t2)         # Store F0 at the first position of fib_array
+    sw $t1, 4($t2)         # Store F1 at the second position of fib_array
+
+    # Handle case when N <= 2, as we've already set F0 and F1
+    li $t3, 2              # Load 2 into $t3 for comparison
+    ble $a0, $t3, finish   # If N <= 2, skip the loop and finish
+
+    # Prepare loop variables
+    addi $t4, $zero, 2     # $t4 will act as the index starting at 2
+    addi $t2, $t2, 8       # Move $t2 to point to fib_array[2]
+
+loop:
+    # Calculate the next Fibonacci value
+    lw $t5, -4($t2)        # Load the previous Fibonacci value (fib[i-1])
+    lw $t6, -8($t2)        # Load the value before that (fib[i-2])
+    add $t7, $t5, $t6      # Add the last two values to get the next Fibonacci number
+    sw $t7, 0($t2)         # Store the new Fibonacci number in fib_array[i]
+
+    # Update pointers and index
+    addi $t2, $t2, 4       # Move to the next position in fib_array
+    addi $t4, $t4, 1       # Increment the index counter
+    blt $t4, $a0, loop     # Continue if we haven’t reached N elements
+    
+finish:
 ############################## Part 1: your code ends here   ###
 jr $ra
 
