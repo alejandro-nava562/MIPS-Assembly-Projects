@@ -18,43 +18,45 @@
 ###############################################################
 fib_recur:
 ############################### Part 1: your code begins here ##
-# Base case: if n == 0, return 0
-	beqz $a0, base_case_zero
-	# Base case: if n == 1, return 1
-	beq $a0, 1, base_case_one
+# Compute and return fibonacci number
+beqz $a0,zero_base_case   #if n=0 return 0
+beq $a0,1,one_base_case   #if n=1 return 1
 
-	# Save return address on stack
-	addi $sp, $sp, -8          # Adjust stack to store $ra and intermediate result
-	sw $ra, 4($sp)             # Push return address
-	sw $a0, 0($sp)             # Save $a0 for later use
 
-	# Call fib(n-1)
-	addi $a0, $a0, -1          # n - 1
-	jal fib_recur              # Recursive call fib(n-1)
+addi $sp,$sp,-4  
+sw $ra,0($sp)
 
-	# Store fib(n-1) result in temporary register
-	move $t0, $v0              # Save fib(n-1) result in $t0
+addi $a0,$a0,-1   
+jal fib_recur     
+add $a0,$a0,1
 
-	# Restore $a0 from the stack
-	lw $a0, 0($sp)             # Load original $a0 value back
-	addi $a0, $a0, -2          # n - 2
+lw $ra,0($sp)   
+add $sp,$sp,4
 
-	# Call fib(n-2)
-	jal fib_recur              # Recursive call fib(n-2)
 
-	# Retrieve saved values from the stack
-	add $v0, $v0, $t0          # Add fib(n-2) and fib(n-1) results
-	lw $ra, 4($sp)             # Restore return address
-	addi $sp, $sp, 8           # Adjust stack pointer back
+addi $sp,$sp,-4  
+sw $v0,0($sp)
 
-	jr $ra                     # Return to caller
+addi $sp,$sp,-4   
+sw $ra,0($sp)
 
-base_case_zero:
-	li $v0, 0                  # Return 0 for fib(0)
+addi $a0,$a0,-2  
+jal fib_recur     
+add $a0,$a0,2
+
+lw $ra,0($sp)   
+add $sp,$sp,4
+lw $s7,0($sp)   
+add $sp,$sp,4
+
+add $v0,$v0,$s7 
+jr $ra
+
+zero_base_case:
+	li $v0, 0
 	jr $ra
-
-base_case_one:
-	li $v0, 1                  # Return 1 for fib(1)
+one_base_case:
+	li $v0, 1
 	jr $ra
 ############################### Part 1: your code ends here  ##
 jr $ra
