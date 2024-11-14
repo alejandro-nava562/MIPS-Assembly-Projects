@@ -18,32 +18,44 @@
 ###############################################################
 fib_recur:
 ############################### Part 1: your code begins here ##
-# Base case if n <= 1:
-li $t0, 1 # need this for comparison for base case
-ble $a0, $t0, base_case # if n <= 1, go to the base case block
+# Base case: if n == 0, return 0
+	beqz $a0, base_case_zero
+	# Base case: if n == 1, return 1
+	beq $a0, 1, base_case_one
 
-recursive_case:
-# fib_recur(n-1)
-addi $sp, $sp, -4 # make space on the stack
-sw $a0, 0($sp) # save n on the stack
-addi $a0, $a0, -1 # n - 1
-jal fib_recur
-move $t1, $v0 # save the result of the (n-1) operation in $t1
+	# Save return address on stack
+	addi $sp, $sp, -8          # Adjust stack to store $ra and intermediate result
+	sw $ra, 4($sp)             # Push return address
+	sw $a0, 0($sp)             # Save $a0 for later use
 
-# fib_recur(n-2)
-lw $a0, 0($sp)
-addi $a0, $a0, -2 # n - 2
-jal fib_recur
+	# Call fib(n-1)
+	addi $a0, $a0, -1          # n - 1
+	jal fib_recur              # Recursive call fib(n-1)
 
-## add the results of (n-1) and (n-2)
-add $v0, $t1, $v0 # result = fib_recur(n-1) + fib_recur(n-2)
-addi $sp, $sp, 4 # restore the stack
-j end_fib # done with recursive calls
+	# Store fib(n-1) result in temporary register
+	move $t0, $v0              # Save fib(n-1) result in $t0
 
-base_case:
-	move $v0, $a0 # if n <= 1, then just return n (1)
-	
-end_fib:
+	# Restore $a0 from the stack
+	lw $a0, 0($sp)             # Load original $a0 value back
+	addi $a0, $a0, -2          # n - 2
+
+	# Call fib(n-2)
+	jal fib_recur              # Recursive call fib(n-2)
+
+	# Retrieve saved values from the stack
+	add $v0, $v0, $t0          # Add fib(n-2) and fib(n-1) results
+	lw $ra, 4($sp)             # Restore return address
+	addi $sp, $sp, 8           # Adjust stack pointer back
+
+	jr $ra                     # Return to caller
+
+base_case_zero:
+	li $v0, 0                  # Return 0 for fib(0)
+	jr $ra
+
+base_case_one:
+	li $v0, 1                  # Return 1 for fib(1)
+	jr $ra
 ############################### Part 1: your code ends here  ##
 jr $ra
 

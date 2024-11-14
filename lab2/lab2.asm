@@ -36,38 +36,38 @@ fibonacci:
 # $a0: Number of elements. 
 # fib_array: The destination array.
 ################## Part 1: your code begins here ###############
-	 # Input:
-    #   $a0 - Number of Fibonacci elements to compute
-    # Output:
-    #   Stores the Fibonacci sequence up to N elements in fib_array
+	# Input:
+	#   $a0 - Number of Fibonacci elements to compute
+	# Output:
+	#   Stores the Fibonacci sequence up to N elements in fib_array
 
-    # Initialize the first two Fibonacci values
-    li $t0, 0              # $t0 holds F0, which is 0
-    li $t1, 1              # $t1 holds F1, which is 1
-    la $t2, fib_array      # Load the starting address of fib_array into $t2
+	# Initialize the first two Fibonacci values
+	li $t0, 0 # $t0 holds F0, which is 0
+	li $t1, 1 # $t1 holds F1, which is 1
+	la $t2, fib_array
 
-    sw $t0, 0($t2)         # Store F0 at the first position of fib_array
-    sw $t1, 4($t2)         # Store F1 at the second position of fib_array
+	sw $t0, 0($t2)
+	sw $t1, 4($t2)
 
-    # Handle case when N <= 2, as we've already set F0 and F1
-    li $t3, 2              # Load 2 into $t3 for comparison
-    ble $a0, $t3, finish   # If N <= 2, skip the loop and finish
+	# Handle case when N <= 2, as we've already set F0 and F1
+	li $t3, 2 # Load 2 into $t3 for comparison
+	ble $a0, $t3, finish # If N <= 2, skip the loop and finish
 
-    # Prepare loop variables
-    addi $t4, $zero, 2     # $t4 will act as the index starting at 2
-    addi $t2, $t2, 8       # Move $t2 to point to fib_array[2]
+	# Prepare loop variables
+	addi $t4, $zero, 2 # $t4 will act as the index starting at 2
+	addi $t2, $t2, 8 # Move $t2 to point to fib_array[2]
 
 loop:
-    # Calculate the next Fibonacci value
-    lw $t5, -4($t2)        # Load the previous Fibonacci value (fib[i-1])
-    lw $t6, -8($t2)        # Load the value before that (fib[i-2])
-    add $t7, $t5, $t6      # Add the last two values to get the next Fibonacci number
-    sw $t7, 0($t2)         # Store the new Fibonacci number in fib_array[i]
+	# Calculate the next Fibonacci value
+	lw $t5, -4($t2) # Load the previous Fibonacci value (fib[i-1])
+	lw $t6, -8($t2) # Load the value before that (fib[i-2])
+	add $t7, $t5, $t6 # Add the last two values to get the next Fibonacci number
+	sw $t7, 0($t2) # Store the new Fibonacci number in fib_array[i]
 
-    # Update pointers and index
-    addi $t2, $t2, 4       # Move to the next position in fib_array
-    addi $t4, $t4, 1       # Increment the index counter
-    blt $t4, $a0, loop     # Continue if we haven’t reached N elements
+	# Update pointers and index
+	addi $t2, $t2, 4
+	addi $t4, $t4, 1
+	blt $t4, $a0, loop     # Continue if we haven’t reached N elements
     
 finish:
 ############################## Part 1: your code ends here   ###
@@ -109,13 +109,13 @@ find_local_maxima:
 	
 loop_find_local_maxima:
 	# 3 elements being loaded: current, previous, and next element
-	lw $t5, 0($t2)                  # $t5 = input[i]
-	lw $t6, -4($t2)                 # $t6 = input[i-1]
-	lw $t7, 4($t2)                  # $t7 = input[i+1]
+	lw $t5, 0($t2)
+	lw $t6, -4($t2)
+	lw $t7, 4($t2)
 
 	# Check if current element is greater than both neighbors
-	ble $t5, $t6, not_max           # If input[i] <= input[i-1], not a local maximum
-	ble $t5, $t7, not_max           # If input[i] <= input[i+1], not a local maximum
+	ble $t5, $t6, not_max # If input[i] <= input[i-1], not a local maximum
+	ble $t5, $t7, not_max # If input[i] <= input[i+1], not a local maximum
 
 	# If it is a local maximum, set output[i] = 1
 	li $t8, 1
@@ -128,9 +128,9 @@ not_max:
 
 next:
 	# Move to the next elements
-	addi $t2, $t2, 4                # Move $t2 to input[i+1]
-	addi $t3, $t3, 4                # Move $t3 to output[i+1]
-	addi $t4, $t4, -1               # Decrement the loop counter
+	addi $t2, $t2, 4
+	addi $t3, $t3, 4
+	addi $t4, $t4, -1
 	bgtz $t4, loop_find_local_maxima
 
 ############################ Part 2: your code ends here ###
@@ -160,35 +160,35 @@ loop_change_case:
 	beq $t0, $zero, end_loop  # If current character is null (0) we are done
 
         # Check if character is uppercase (A-Z)
-	li $t1, 65                # ASCII value of 'A'
-	li $t2, 90                # ASCII value of 'Z'
+	li $t1, 65                
+	li $t2, 90                
         blt $t0, $t1, check_lower # If char < 'A', check if it's lowercase
         bgt $t0, $t2, check_lower # If char > 'Z', check if it's lowercase
 
         # Convert uppercase to lowercase
-        addi $t0, $t0, 32         # Add 32 to convert to lowercase
-        j store_char              # Store the converted character
+        addi $t0, $t0, 32 # Add 32 to convert to lowercase
+        j store_char # Store the converted character
 
 check_lower:
         # Check if character is lowercase (a-z)
-        li $t1, 97                # ASCII value of 'a'
-        li $t2, 122               # ASCII value of 'z'
-        blt $t0, $t1, next_char   # If char < 'a', skip to the next character
-        bgt $t0, $t2, next_char   # If char > 'z', skip to the next character
+        li $t1, 97
+        li $t2, 122
+        blt $t0, $t1, next_char
+        bgt $t0, $t2, next_char
 
         # Convert lowercase to uppercase
-        subi $t0, $t0, 32         # Subtract 32 to convert to uppercase
+        subi $t0, $t0, 32 # Subtract 32 to convert to uppercase
 
 store_char:
-        sb $t0, 0($a1)            # Store the character in the output string
-        addi $a1, $a1, 1          # Move to the next position in the output string
+        sb $t0, 0($a1)
+        addi $a1, $a1, 1
 
 next_char:
-        addi $a0, $a0, 1          # Move to the next character in the input string
-        lb $t0, 0($a0)            # Load the next character
+        addi $a0, $a0, 1
+        lb $t0, 0($a0)
         j loop_change_case
 
 end_loop:
-        sb $zero, 0($a1)          # Append null character to the end of the output str
+        sb $zero, 0($a1) # Append null character to the end of the output str
 ############################## Part 3: your code ends here ###
 jr $ra
