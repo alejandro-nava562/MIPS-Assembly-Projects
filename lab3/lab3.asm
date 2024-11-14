@@ -18,7 +18,32 @@
 ###############################################################
 fib_recur:
 ############################### Part 1: your code begins here ##
+# Base case if n <= 1:
+li $t0, 1 # need this for comparison for base case
+ble $a0, $t0, base_case # if n <= 1, go to the base case block
 
+recursive_case:
+# fib_recur(n-1)
+addi $sp, $sp, -4 # make space on the stack
+sw $a0, 0($sp) # save n on the stack
+addi $a0, $a0, -1 # n - 1
+jal fib_recur
+move $t1, $v0 # save the result of the (n-1) operation in $t1
+
+# fib_recur(n-2)
+lw $a0, 0($sp)
+addi $a0, $a0, -2 # n - 2
+jal fib_recur
+
+## add the results of (n-1) and (n-2)
+add $v0, $t1, $v0 # result = fib_recur(n-1) + fib_recur(n-2)
+addi $sp, $sp, 4 # restore the stack
+j end_fib # done with recursive calls
+
+base_case:
+	move $v0, $a0 # if n <= 1, then just return n (1)
+	
+end_fib:
 ############################### Part 1: your code ends here  ##
 jr $ra
 
