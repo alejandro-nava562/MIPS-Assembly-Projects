@@ -19,45 +19,56 @@
 fib_recur:
 ############################### Part 1: your code begins here ##
 # Compute and return fibonacci number
-beqz $a0,zero_base_case   #if n=0 return 0
-beq $a0,1,one_base_case   #if n=1 return 1
+beqz $a0, zero_base_case   # if n == 0, go to zero_base_case (return 0)
+beq $a0,1, one_base_case   # if n == 1, go to one_base_case (return 1)
 
+# Save return address on stack before recursive call for fib(n-1)
+addi $sp,$sp,-4          # Allocate space on the stack for return address
+sw $ra,0($sp)            # Save return address to the stack
 
-addi $sp,$sp,-4  
-sw $ra,0($sp)
+# Prepare for recursive call to calculate fib(n-1)
+addi $a0,$a0,-1          # Set argument to n-1
+jal fib_recur            # Jump to fib_recur to calculate fib(n-1)
+add $a0,$a0,1            # Restore original value of $a0 after returning
 
-addi $a0,$a0,-1   
-jal fib_recur     
-add $a0,$a0,1
+# Restore return address from the stack
+lw $ra,0($sp)            # Load return address from the stack
+add $sp,$sp,4            # Deallocate stack space
 
-lw $ra,0($sp)   
-add $sp,$sp,4
+# Save result of fib(n-1) on stack
+addi $sp,$sp,-4          # Allocate space on the stack for result
+sw $v0,0($sp)            # Store result of fib(n-1)
 
+# Save return address on stack before recursive call for fib(n-2)
+addi $sp,$sp,-4          # Allocate space on the stack for return address
+sw $ra,0($sp)            # Save return address to the stack
 
-addi $sp,$sp,-4  
-sw $v0,0($sp)
+# Prepare for recursive call to calculate fib(n-2)
+addi $a0,$a0,-2          # Set argument to n-2
+jal fib_recur            # Jump to fib_recur to calculate fib(n-2)
+add $a0,$a0,2            # Restore original value of $a0 after returning
 
-addi $sp,$sp,-4   
-sw $ra,0($sp)
+# Restore return address from the stack
+lw $ra,0($sp)            # Load return address from the stack
+add $sp,$sp,4            # Deallocate stack space
 
-addi $a0,$a0,-2  
-jal fib_recur     
-add $a0,$a0,2
+# Load result of fib(n-1) from the stack
+lw $s7,0($sp)            # Load result of fib(n-1) from the stack into $s7
+add $sp,$sp,4            # Deallocate stack space for fib(n-1)
 
-lw $ra,0($sp)   
-add $sp,$sp,4
-lw $s7,0($sp)   
-add $sp,$sp,4
+# Calculate fib(n) = fib(n-1) + fib(n-2) and return
+add $v0,$v0,$s7          # Calculate fib(n) = fib(n-1) + fib(n-2)
+jr $ra                   # Return to caller
 
-add $v0,$v0,$s7 
-jr $ra
-
+# Base case for n = 0
 zero_base_case:
-	li $v0, 0
-	jr $ra
+    li $v0, 0            # Set $v0 to 0 for base case n = 0
+    jr $ra               # Return to caller
+
+# Base case for n = 1
 one_base_case:
-	li $v0, 1
-	jr $ra
+    li $v0, 1            # Set $v0 to 1 for base case n = 1
+    jr $ra               # Return to caller
 ############################### Part 1: your code ends here  ##
 jr $ra
 
