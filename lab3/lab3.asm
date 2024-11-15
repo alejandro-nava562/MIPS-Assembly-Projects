@@ -57,7 +57,7 @@ lw $s7,0($sp)
 add $sp,$sp,4         
 
 # Calculate fib(n) = fib(n-1) + fib(n-2) and return
-add $v0,$v0,$s7 # Calculate fib(n) = fib(n-1) + fib(n-2)
+add $v0,$v0,$s7
 jr $ra                   
 
 # Base case for n = 0
@@ -82,31 +82,31 @@ catalan_recur:
 ############################### Part 2: your code begins here ##
 	# need to make 5 registry spaces so that we can store and save values we need to remember
 	sub $sp, $sp, 20
-	sw $ra, 0($sp)
-	sw $s0, 4($sp)
-	sw $s1, 8($sp)
+	sw $t3, 16($sp)
 	sw $a0, 12($sp)
-	sw $t2, 16($sp)
+	sw $s1, 8($sp)
+	sw $s0, 4($sp)
+	sw $ra, 0($sp)
 	li $t0, 1
 	li $s1, 0
 	ble $a0, $t0, return_one_base_case
-	li $t2, 0
+	li $t3, 0
 loop_start_catalan:
-	blt $t2, $a0, recursive_calculations
+	blt $t3, $a0, recursive_calculations
 	j end_loop
 recursive_calculations:
-	move $a0, $t2
+	move $a0, $t3
 	jal catalan_recur
 	move $s0, $v0
 	lw $a0, 12($sp)
-	sub $a1, $a0, $t2
+	sub $a1, $a0, $t3
 	addi $a1, $a1, -1
 	move $a0, $a1
 	jal catalan_recur
 	mul $s0, $s0, $v0
 	add $s1, $s1, $s0
 	lw $a0, 12($sp)
-	addi $t2, $t2, 1
+	addi $t3, $t3, 1
 	j loop_start_catalan
 end_loop:
 	move $v0, $s1
@@ -119,7 +119,7 @@ cleanup_memory:
 	lw $s0, 4($sp)
 	lw $s1, 8($sp)
 	lw $a0, 12($sp)
-	lw $t2, 16($sp)
+	lw $t3, 16($sp)
 	addi $sp, $sp, 20
 	jr $ra
 ############################### Part 2: your code ends here  ##
