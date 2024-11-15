@@ -69,6 +69,7 @@ jr $ra
 ###############################################################
 catalan_recur:
 ############################### Part 2: your code begins here ##
+	# need to make 5 registry spaces so that we can store and save values we need to remember
 	sub $sp, $sp, 20
 	sw $ra, 0($sp)
 	sw $s0, 4($sp)
@@ -80,9 +81,9 @@ catalan_recur:
 	ble $a0, $t0, return_one_base_case
 	li $t2, 0
 loop_start_catalan:
-	blt $t2, $a0, recursive_part
+	blt $t2, $a0, recursive_calculations
 	j end_loop
-recursive_part:
+recursive_calculations:
 	move $a0, $t2
 	jal catalan_recur
 	move $s0, $v0
@@ -101,6 +102,7 @@ end_loop:
 	j cleanup_memory
 return_one_base_case:
 	li $v0, 1
+# ran into memory issues so we have to clean up after the fact
 cleanup_memory:
 	lw $ra, 0($sp)
 	lw $s0, 4($sp)
