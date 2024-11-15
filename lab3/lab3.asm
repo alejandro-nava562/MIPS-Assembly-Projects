@@ -153,18 +153,52 @@ li $v0, 16 # close file
 move $a0, $t0 # file descrip to close
 syscall
 
+# +------------
+# sample code stuff we can change
 la $s1, data_buffer
+li $t4, 0 # index in integer array
+li $t5, 0 # store current number
+li $t6, 0 # variable to signal if we are reading first or second
+li $t7, 0 # store second number
 loop3a:
-lb $t0, ($s1)
-beqz $t0, end3
-beq $t0, 0x0A, next
-beq $t0, 0x20, next
-addi $t1, $t0, -48
-mul $t1, $t1, 10
-add $t1, $t1, $t0
-j loop3a
+	lb $t0, ($s1) # loading the byte from data_buffer
+	beqz $t0, end3
+	beq $t0, 0x0A, process
+	beq $t0, 0x20, process
+	
+	# converting ASCII to Integer
+	addi $t0, $t0, -48
+	
+	mul $t5, $t5, 10
+	add $t5, $t5, $t0
+	j next
+process:
+	beq $t6, 0, store_first # if reading the first number $t6 will be 0 so jump there
+	move $t7, $t5
+	sub $t8, $t7, $t9 # calculate the distance (second - first)
+	
+	# negative distance handling
+	bltz $t8, make_positive
+	j store_distance
+make_positive:
+	neg $t8, $t8
+store_distance:
+	sw $t8, 0($a1)
+	addi $a1, $a1, 4
+	li $t6, 0
+	li $t5, 0
+	addi $t4, $t4, 1
+	j next
+store_first:
+	move $t9, $t5 # store the first num
+	li $t6, 1 # we stored the first num so now $t6 is 1
+	li $t5, 0
+	j next
 next:
+	addi $s1, $s1, 1 # move to next char
+	j loop3a
 end3:
+	move $v0, $t4 # return the num of distance calculated
 ############################### Part 3A: your code ends here   ##
 jr $ra
 
