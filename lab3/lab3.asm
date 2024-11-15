@@ -33,14 +33,14 @@ add $a0,$a0,1
 
 # Restore return address from the stack
 lw $ra,0($sp)            
-add $sp,$sp,4            
+add $sp,$sp, 4            
 
 # Save result of fib(n-1) on stack
-addi $sp,$sp,-4         
+addi $sp,$sp, -4         
 sw $v0,0($sp) # Store result of fib(n-1)
 
 # Save return address on stack before recursive call for fib(n-2)
-addi $sp,$sp,-4         
+addi $sp,$sp, -4         
 sw $ra,0($sp) # Save return address to the stack
 
 # Prepare for recursive call to calculate fib(n-2)
@@ -53,11 +53,11 @@ lw $ra,0($sp)
 add $sp,$sp,4            
 
 # Load result of fib(n-1) from the stack
-lw $s7,0($sp)         
+lw $t7,0($sp)         
 add $sp,$sp,4         
 
 # Calculate fib(n) = fib(n-1) + fib(n-2) and return
-add $v0,$v0,$s7
+add $v0,$v0,$t7
 jr $ra                   
 
 # Base case for n = 0
