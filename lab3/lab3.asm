@@ -110,11 +110,11 @@ recursive_calculations:
 	j loop_start_catalan
 end_loop:
 	move $v0, $s1
-	j cleanup_memory
+	j restore_pointers
 return_one_base_case:
 	li $v0, 1
 # ran into memory issues so we have to clean up after the fact
-cleanup_memory:
+restore_pointers:
 	lw $ra, 0($sp)
 	lw $s0, 4($sp)
 	lw $s1, 8($sp)
