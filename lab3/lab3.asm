@@ -69,59 +69,46 @@ jr $ra
 ###############################################################
 catalan_recur:
 ############################### Part 2: your code begins here ##
-	addi $sp, $sp, -20   # Allocate space on stack for 5 items: $ra, $s0, $s1, $a0, and loop counter
-	sw $ra, 0($sp)       # Save return address
-	sw $s0, 4($sp)       # Save $s0 (we will use it for temporary storage)
-	sw $s1, 8($sp)       # Save $s1 (used for accumulating result)
-	sw $a0, 12($sp)      # Save original argument $a0 (n)
-	sw $t2, 16($sp)      # Save $t2 if used before calling this function
-
-	li $t0, 1            # Load immediate 1 into $t0 for comparison
-	li $s1, 0            # Initialize accumulator for result in $s1
-
-	ble $a0, $t0, return_one # If n <= 1, return 1 as Catalan number
-
-    # Initialize loop counter, $t2 = 0
+	sub $sp, $sp, 20
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
+	sw $a0, 12($sp)
+	sw $t2, 16($sp)
+	li $t0, 1
+	li $s1, 0
+	ble $a0, $t0, return_one_base_case
 	li $t2, 0
-
-loop_start:
-	blt $t2, $a0, recursive_part # If $t2 < n, continue recursion
-	j end_loop                   # Else, end loop
-
+loop_start_catalan:
+	blt $t2, $a0, recursive_part
+	j end_loop
 recursive_part:
-	move $a0, $t2                # Prepare first argument for recursive call
-	jal catalan_recur            # Recursive call catalan_recur(i)
-	move $s0, $v0                # Store the result of catalan_recur(i) in $s0
-
-	lw $a0, 12($sp)              # Restore $a0 (n) for calculation of n-i-1
-	sub $a1, $a0, $t2            # n - i
-	addi $a1, $a1, -1            # n - i - 1
-	move $a0, $a1                # Prepare second argument for recursive call
-	jal catalan_recur            # Recursive call catalan_recur(n-i-1)
-
-	mul $s0, $s0, $v0            # Multiply results: catalan_recur(i) * catalan_recur(n-i-1)
-	add $s1, $s1, $s0            # Accumulate in $s1
-
-	lw $a0, 12($sp)              # Restore $a0 for next iteration
-	addi $t2, $t2, 1             # Increment loop counter
-	j loop_start                 # Jump back to start of loop
-
+	move $a0, $t2
+	jal catalan_recur
+	move $s0, $v0
+	lw $a0, 12($sp)
+	sub $a1, $a0, $t2
+	addi $a1, $a1, -1
+	move $a0, $a1
+	jal catalan_recur
+	mul $s0, $s0, $v0
+	add $s1, $s1, $s0
+	lw $a0, 12($sp)
+	addi $t2, $t2, 1
+	j loop_start_catalan
 end_loop:
-	move $v0, $s1                # Move accumulated result to $v0
-	j cleanup                    # Jump to cleanup
-
-return_one:
-	li $v0, 1                    # Set return value to 1 for base case
-
-# I kept running into memory overflow issues so I implemented some clean up
-cleanup:
-	lw $ra, 0($sp)               # Restore $ra
-	lw $s0, 4($sp)               # Restore $s0
-	lw $s1, 8($sp)               # Restore $s1
-	lw $a0, 12($sp)              # Restore $a0
-	lw $t2, 16($sp)              # Restore $t2
-	addi $sp, $sp, 20            # Went down 20 so go up 20 to restore stack
-	jr $ra                       # Return
+	move $v0, $s1
+	j cleanup_memory
+return_one_base_case:
+	li $v0, 1
+cleanup_memory:
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	lw $a0, 12($sp)
+	lw $t2, 16($sp)
+	addi $sp, $sp, 20
+	jr $ra
 ############################### Part 2: your code ends here  ##
 jr $ra
 
