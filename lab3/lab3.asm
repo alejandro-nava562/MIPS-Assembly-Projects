@@ -155,52 +155,86 @@ syscall
 
 # +------------
 # sample code stuff we can change
-la $s1, data_buffer
-li $t4, 0 # index in integer array
-li $t5, 0 # store current number
-li $t6, 0 # variable to signal if we are reading first or second
-li $t7, 0 # store second number
+# Save $s registers to the stack
+addi $sp, $sp, -12      # Allocate space on the stack
+sw $s1, 0($sp)          # Save $s1 (data buffer pointer)
+sw $s0, 4($sp)          # Save $s0 (distance array pointer)
+sw $s2, 8($sp)          # Save $s2 (any additional $s register used)
+
+la $s1, data_buffer     # Load the data buffer pointer
+li $t1, 0               # Temporary register for current number
+li $t9, 0               # Flag for negative number
+la $s0, dist_array      # Load the distance array pointer
+li $v0, 0               # Counter for number of distances calculated
+
 loop3a:
-	lb $t0, ($s1) # loading the byte from data_buffer
-	beqz $t0, end3
-	beq $t0, 0x0A, process
-	beq $t0, 0x20, process
-	
-	# converting ASCII to Integer
-	addi $t0, $t0, -48
-	
-	mul $t5, $t5, 10
-	add $t5, $t5, $t0
-	j next
-process:
-	beq $t6, 0, store_first # if reading the first number $t6 will be 0 so jump there
-	move $t7, $t5
-	sub $t8, $t7, $t9 # calculate the distance (second - first)
-	
-	# negative distance handling
-	bltz $t8, make_positive
-	j store_distance
-make_positive:
-	neg $t8, $t8
-store_distance:
-	sw $t8, 0($a1)
-	addi $a1, $a1, 4
-	li $t6, 0
-	li $t5, 0
-	addi $t4, $t4, 1
-	j next
-store_first:
-	move $t9, $t5 # store the first num
-	li $t6, 1 # we stored the first num so now $t6 is 1
-	li $t5, 0
-	j next
+    lb $t0, ($s1)        # Load the current byte
+    beqz $t0, end3       # If null terminator (end of buffer), exit loop
+    beq $t0, 0x0A, end_of_line   # Branch on newline
+    beq $t0, 0x20, next  # Branch on space
+    beq $t0, 0x2D, flag_neg # Branch on '-' (negative flag)
+
+    # Convert ASCII digit to integer and update $t1
+    addi $t0, $t0, -48   # ASCII to integer
+    mul $t1, $t1, 10     # Multiply $t1 by 10
+    add $t1, $t1, $t0    # Add the digit
+    addi $s1, $s1, 1     # Move to the next byte
+    j loop3a
+
+flag_neg:
+    li $t9, 1            # Set negative flag
+    addi $s1, $s1, 1     # Move to the next byte
+    j loop3a
+
 next:
-	addi $s1, $s1, 1 # move to next char
-	j loop3a
+    # Check if the number is negative and finalize the first/second number
+    bne $t9, 0, make_neg # If negative flag is set, negate $t1
+    move $t2, $t1        # Store the current number in $t2
+    li $t1, 0            # Reset $t1 for the next number
+    j incre_loop
+
+make_neg:
+    sub $t1, $zero, $t1  # Negate $t1
+    li $t9, 0            # Clear the negative flag
+    j next
+
+end_of_line:
+    # Check if the last number in the line is negative
+    bne $t9, 0, make_neg_eol
+
+    # Calculate distance
+    sub $t2, $t1, $t2    # $t1 (current number) - $t2 (previous number)
+    bgez $t2, store_dist 
+    sub $t2, $zero, $t2  
+    j store_dist
+
+make_neg_eol:
+    sub $t1, $zero, $t1  
+    li $t9, 0            
+    j end_of_line
+
+store_dist:
+    sw $t2, ($s0)        
+    addi $s0, $s0, 4     
+    addi $v0, $v0, 1     
+    li $t1, 0            
+    li $t2, 0           
+    addi $s1, $s1, 1     
+    j loop3a
+
+incre_loop:
+    li $t1, 0            # Reset $t1
+    addi $s1, $s1, 1     # Increment pointer
+    j loop3a
+
 end3:
-	move $v0, $t4 # return the num of distance calculated
-############################### Part 3A: your code ends here   ##
-jr $ra
+    # Restore $s registers from the stack
+    lw $s1, 0($sp)       # Restore $s1
+    lw $s0, 4($sp)       # Restore $s0
+    lw $s2, 8($sp)       # Restore $s2
+    addi $sp, $sp, 12    # Deallocate stack space
+    jr $ra               # Return to caller
+
 
 ###############################################################
 ###############################################################
@@ -213,6 +247,109 @@ jr $ra
 # data_buffer : the buffer that you use to hold data for file read (MAXIMUM: 300 bytes)
 save_dist_list:
 ############################### Part 3B: your code begins here ##
+# Save $s registers (callee-saved)
+    addi $sp, $sp, -12      # Allocate stack space
+    sw $s0, 0($sp)          # Save $s0 (distance array pointer)
+    sw $s1, 4($sp)          # Save $s1 (data_buffer pointer)
+    sw $s2, 8($sp)          # Save $s2 (counter)
 
+    # Initialize pointers and counters
+    move $s0, $a1           # $s0: pointer to distance array
+    la   $s1, data_buffer   # $s1: pointer to data_buffer
+    move $s2, $a2           # $s2: number of distances to save
+
+convert_loop:
+    beqz $s2, conversion_done  # If $s2 == 0, we're done
+    lw   $t0, 0($s0)           # Load next distance from array
+    addi $s0, $s0, 4           # Move to next integer in array
+    addi $s2, $s2, -1          # Decrement number of distances to save
+
+    # Handle zero explicitly
+    bnez $t0, convert_nonzero
+
+    # If zero, store '0' and newline
+    li   $t3, 48               # ASCII '0'
+    sb   $t3, ($s1)
+    addi $s1, $s1, 1
+    li   $t3, 0x0A             # ASCII newline
+    sb   $t3, ($s1)
+    addi $s1, $s1, 1
+    j    convert_loop
+
+convert_nonzero:
+    # Prepare for conversion
+    addi $sp, $sp, -40         # Allocate space for digits (max 10 digits)
+    move $t4, $sp              # $t4 points to digit storage
+    li   $t1, 0                # $t1: digit count
+
+convert_digits:
+    bgtz $t0, extract_digit    # If $t0 > 0, extract digit
+    j     output_digits        # Else, output digits
+
+extract_digit:
+    li   $t5, 10
+    div  $t0, $t5              # Divide $t0 by 10
+    mfhi $t2                   # $t2: remainder
+    mflo $t0                   # $t0: quotient
+
+    addi $t2, $t2, 48          # Convert digit to ASCII
+    subi $t4, $t4, 1           # Decrement $t4 to store digit in reverse order
+    sb   $t2, ($t4)            # Store digit
+    addi $t1, $t1, 1           # Increment digit count
+    j    convert_digits
+
+output_digits:
+    # Adjust $t4 to point to the first digit
+    move $t5, $t4              # $t5 points to the first digit stored
+    add  $t4, $t4, $t1         # Reset $t4 to the position after all digits
+
+output_digit_loop:
+    beqz $t1, store_newline    # If no more digits, store newline
+    lb   $t2, 0($t5)           # Load digit from reversed storage
+    sb   $t2, ($s1)            # Store digit in data_buffer
+    addi $s1, $s1, 1           # Increment data_buffer pointer
+    addi $t5, $t5, 1           # Move to the next digit
+    addi $t1, $t1, -1          # Decrement digit count
+    j    output_digit_loop
+
+store_newline:
+    addi $sp, $sp, 40          # Deallocate digit storage
+    li   $t3, 0x0A             # ASCII newline
+    sb   $t3, ($s1)
+    addi $s1, $s1, 1           # Increment data_buffer pointer
+    j    convert_loop          # Process next integer
+
+conversion_done:
+    # Open the output file
+    li   $v0, 13               # syscall: open file
+    move $a0, $a0              # Output file name in $a0
+    li   $a1, 1                # Flags: 1 (write)
+    li   $a2, 0                # Mode: 0 (ignored)
+    syscall
+    move $t0, $v0              # File descriptor in $t0
+
+    # Calculate number of bytes to write
+    la   $t1, data_buffer      # Start of data_buffer
+    subu $a2, $s1, $t1         # $a2 = number of bytes to write
+
+    # Write to file
+    li   $v0, 15               # syscall: write to file
+    move $a0, $t0              # File descriptor
+    la   $a1, data_buffer      # Buffer to write
+    # $a2 already contains number of bytes
+    syscall
+
+    # Close the file
+    li   $v0, 16               # syscall: close file
+    move $a0, $t0              # File descriptor
+    syscall
+
+    # Restore $s registers and return
+    lw   $s0, 0($sp)
+    lw   $s1, 4($sp)
+    lw   $s2, 8($sp)
+    addi $sp, $sp, 12          # Deallocate stack space
+    li   $v0, 0                # Success
+    jr   $ra
 ############################### Part 3B: your code ends here   ##
 jr $ra
