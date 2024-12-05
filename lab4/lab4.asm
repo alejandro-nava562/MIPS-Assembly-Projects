@@ -20,7 +20,35 @@
 ###############################################################
 threshold:
 ############################## Part 1: your code begins here ###
+li $t0, 0 # index for the current pixel
+mul $t1, $a2, $a2 # Total number of pixels for the image
 
+loop_threshold:
+	beq $t0, $t1, done_threshold
+	# calculate input pixel address
+	add $t2, $a0, $t0
+	lb $t3, 0($t2) # load the pixel value (8 bits = 1 byte)
+	
+	# compare to the threshold
+	slt $t4, $t3, $a3 # use a3 to compare the threshold and set $t4 to 1 if pixel < threshold
+	beq $t4, $zero, bright
+	
+	# set the pixel to dark otherwise
+	# dark hex value: (0x00)
+	li $t5, 0x00
+bright:
+	# set values to bright values if the threshold is not met
+	# bright hex value: (0xFF)
+	li $t5, 0xFF # Bright value
+	add $t6, $a1, $0
+	sb $t5, 0($t6)
+	j next_pixel
+
+next_pixel:
+	addi $t0, $t0, 1 # go to the next pixel
+	j loop_threshold # repeat loop
+
+done_threshold: # all done processing pixels
 ############################## Part 1: your code ends here ###
 jr $ra
 
