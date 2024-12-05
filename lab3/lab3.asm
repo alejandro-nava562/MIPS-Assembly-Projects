@@ -156,54 +156,53 @@ syscall
 # +------------
 # sample code stuff we can change
 # Save $s registers to the stack
-addi $sp, $sp, -12      # Allocate space on the stack
-sw $s1, 0($sp)          # Save $s1 (data buffer pointer)
-sw $s0, 4($sp)          # Save $s0 (distance array pointer)
-sw $s2, 8($sp)          # Save $s2 (any additional $s register used)
+addi $sp, $sp, -12     
+sw $s1, 0($sp)         
+sw $s0, 4($sp)         
+sw $s2, 8($sp)          
 
-la $s1, data_buffer     # Load the data buffer pointer
-li $t1, 0               # Temporary register for current number
-li $t9, 0               # Flag for negative number
-la $s0, dist_array      # Load the distance array pointer
-li $v0, 0               # Counter for number of distances calculated
+la $s1, data_buffer   
+li $t1, 0            
+li $t9, 0         
+la $s0, dist_array    
+li $v0, 0               
 
 loop3a:
-    lb $t0, ($s1)        # Load the current byte
-    beqz $t0, end3       # If null terminator (end of buffer), exit loop
-    beq $t0, 0x0A, end_of_line   # Branch on newline
-    beq $t0, 0x20, next  # Branch on space
-    beq $t0, 0x2D, flag_neg # Branch on '-' (negative flag)
+    lb $t0, ($s1)   
+    beqz $t0, end3      
+    beq $t0, 0x0A, end_of_line 
+    beq $t0, 0x20, next 
+    beq $t0, 0x2D, flag_neg
 
     # Convert ASCII digit to integer and update $t1
-    addi $t0, $t0, -48   # ASCII to integer
-    mul $t1, $t1, 10     # Multiply $t1 by 10
-    add $t1, $t1, $t0    # Add the digit
-    addi $s1, $s1, 1     # Move to the next byte
+    addi $t0, $t0, -48
+    mul $t1, $t1, 10  
+    add $t1, $t1, $t0 
+    addi $s1, $s1, 1  
     j loop3a
 
 flag_neg:
-    li $t9, 1            # Set negative flag
-    addi $s1, $s1, 1     # Move to the next byte
+    li $t9, 1 
+    addi $s1, $s1, 1
     j loop3a
 
 next:
-    # Check if the number is negative and finalize the first/second number
-    bne $t9, 0, make_neg # If negative flag is set, negate $t1
-    move $t2, $t1        # Store the current number in $t2
-    li $t1, 0            # Reset $t1 for the next number
+
+    bne $t9, 0, make_neg
+    move $t2, $t1
+    li $t1, 0  
     j incre_loop
 
 make_neg:
-    sub $t1, $zero, $t1  # Negate $t1
-    li $t9, 0            # Clear the negative flag
+    sub $t1, $zero, $t1  
+    li $t9, 0 
     j next
 
 end_of_line:
-    # Check if the last number in the line is negative
     bne $t9, 0, make_neg_eol
 
-    # Calculate distance
-    sub $t2, $t1, $t2    # $t1 (current number) - $t2 (previous number)
+ 
+    sub $t2, $t1, $t2    
     bgez $t2, store_dist 
     sub $t2, $zero, $t2  
     j store_dist
@@ -228,12 +227,11 @@ incre_loop:
     j loop3a
 
 end3:
-    # Restore $s registers from the stack
-    lw $s1, 0($sp)       # Restore $s1
-    lw $s0, 4($sp)       # Restore $s0
-    lw $s2, 8($sp)       # Restore $s2
-    addi $sp, $sp, 12    # Deallocate stack space
-    jr $ra               # Return to caller
+    lw $s1, 0($sp) 
+    lw $s0, 4($sp)
+    lw $s2, 8($sp) 
+    addi $sp, $sp, 12  
+    jr $ra              
 
 
 ###############################################################

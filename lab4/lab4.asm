@@ -27,22 +27,24 @@ loop_threshold:
 	beq $t0, $t1, done_threshold
 	# calculate input pixel address
 	add $t2, $a0, $t0
-	lb $t3, 0($t2) # load the pixel value (8 bits = 1 byte)
+	lbu $t3, 0($t2) # load the pixel value (8 bits = 1 byte)
 	
 	# compare to the threshold
-	slt $t4, $t3, $a3 # use a3 to compare the threshold and set $t4 to 1 if pixel < threshold
+	sltu $t4, $t3, $a3 # use a3 to compare the threshold and set $t4 to 1 if pixel < threshold
 	beq $t4, $zero, bright
 	
 	# set the pixel to dark otherwise
 	# dark hex value: (0x00)
 	li $t5, 0x00
+	add $t6, $a1, $t0 # $t6 = output buffer
+	sb $t5, 0($t6) # store dark value in output buffer
+	j next_pixel
 bright:
 	# set values to bright values if the threshold is not met
 	# bright hex value: (0xFF)
 	li $t5, 0xFF # Bright value
-	add $t6, $a1, $0
+	add $t6, $a1, $t0
 	sb $t5, 0($t6)
-	j next_pixel
 
 next_pixel:
 	addi $t0, $t0, 1 # go to the next pixel
