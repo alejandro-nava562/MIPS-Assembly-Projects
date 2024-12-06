@@ -62,83 +62,75 @@ jr $ra
 #a2: transform matrix address
 #a3: image dimension  (Image will be square sized, i.e., number of pixels = a3*a3)
 ###############################################################
-
-# Registers needed:
-
-#t0 = x (current column)
-#t1 = y (current row)
-# t2 = address of input pixel (input buffer)
-# t3 = address of output pixel (output buffer)
-# t4 = x' (transformed coordinate)
-# t5 = y' (transformed coordinate)
-# t6 = temp for matrix element
-# t7 = temp for pixel value
-# t8 = image dimension
-
 transform:
 ############################### Part 2: your code begins here ##
-    li $t0, 0            # Initialize x (column index)
-    li $t1, 0            # Initialize y (row index)
-    move $t8, $a3        # Store image dimension in $t8 (DO NOT OVERWRITE)
+# Outer loop: iterate over rows (y)
+    li $t6, 0               # $t6 = y (initialize row index)
+Outer_Loop:
+    bge $t6, $a3, Exit_Loop # Exit if y >= image dimension
 
-outer_loop:              # Loop over rows (y)
-    beq $t1, $t8, done_transform  # Exit if all rows processed
-    li $t0, 0            # Reset x (column index) at the start of a new row
+    # Inner loop: iterate over columns (x)
+    li $t7, 0               # $t7 = x (initialize column index)
 
-inner_loop:              # Loop over columns (x)
-    beq $t0, $t8, next_row # Exit if all columns in the row are processed
+Inner_Loop:
+    bge $t7, $a3, Next_Row  # Exit if x >= image dimension
 
     # Calculate x' = M[0][0]*x + M[0][1]*y + M[0][2]
-    lw $t4, 0($a2)        # Load M[0][0]
-    mul $t4, $t4, $t0     # M[0][0] * x
+    lw $t3, 0($a2)          # Load M[0][0]
+    mul $t8, $t3, $t7       # $t8 = M[0][0] * x
 
-    lw $t5, 4($a2)        # Load M[0][1]
-    mul $t5, $t5, $t1     # M[0][1] * y
-    add $t4, $t4, $t5     # Add M[0][0]*x + M[0][1]*y
+    lw $t3, 4($a2)          # Load M[0][1]
+    mul $t9, $t3, $t6       # $t9 = M[0][1] * y
+    add $t8, $t8, $t9       # $t8 += $t9 (M[0][0]*x + M[0][1]*y)
 
-    lw $t6, 8($a2)        # Load M[0][2]
-    add $t4, $t4, $t6     # Add M[0][2] to x'
+    lw $t3, 8($a2)          # Load M[0][2]
+    add $t8, $t8, $t3       # $t8 += M[0][2] (x')
 
     # Calculate y' = M[1][0]*x + M[1][1]*y + M[1][2]
-    lw $t7, 12($a2)       # Load M[1][0]
-    mul $t7, $t7, $t0     # M[1][0] * x
+    lw $t3, 12($a2)         # Load M[1][0]
+    mul $t9, $t3, $t7       # $t9 = M[1][0] * x
 
-    lw $t9, 16($a2)       # Load M[1][1]
-    mul $t9, $t9, $t1     # M[1][1] * y
-    add $t7, $t7, $t9     # Add M[1][0]*x + M[1][1]*y
+    lw $t3, 16($a2)         # Load M[1][1]
+    mul $t2, $t3, $t6       # $t2 = M[1][1] * y
+    add $t9, $t9, $t2       # $t9 += $t2 (M[1][0]*x + M[1][1]*y)
 
-    lw $t9, 20($a2)       # Load M[1][2]
-    add $t7, $t7, $t9     # Add M[1][2] to y'
+    lw $t3, 20($a2)         # Load M[1][2]
+    add $t9, $t9, $t3       # $t9 += M[1][2] (y')
 
     # Check if x' and y' are within bounds
-    bltz $t4, skip_pixel    # Skip if x' < 0
-    bltz $t7, skip_pixel    # Skip if y' < 0
-    bge $t4, $t8, skip_pixel # Skip if x' >= a3 ($t8)
-    bge $t7, $t8, skip_pixel # Skip if y' >= a3 ($t8)
+    bltz $t8, Skip_Pixel     # Skip if x' < 0
+    bltz $t9, Skip_Pixel     # Skip if y' < 0
+    bge $t8, $a3, Skip_Pixel # Skip if x' >= image dimension
+    bge $t9, $a3, Skip_Pixel # Skip if y' >= image dimension
+
+    # Compute input buffer address for (x', y')
+    mul $t2, $t9, $a3        # $t2 = y' * image dimension
+    add $t2, $t2, $t8        # $t2 += x'
+    mul $t2, $t2, 1
+    
+    addu $t2, $a0, $t2        # $t2 = input buffer address + $t2
 
     # Load pixel value from input buffer
-    mul $t6, $t7, $t8       # y' * dimension
-    add $t6, $t6, $t4       # y' * dimension + x'
-    sll $t6, $t6, 2         # Multiply by 4 (pixel size in bytes)
-    add $t6, $a0, $t6       # Address of input pixel
-    lbu $t9, 0($t6)         # Load pixel value into $t9
+    lbu $t3, 0($t2)          # $t3 = input_pixel_value (byte load)
 
-    # Store pixel value in output buffer
-    mul $t6, $t1, $t8       # y * dimension
-    add $t6, $t6, $t0       # y * dimension + x
-    sll $t6, $t6, 2         # Multiply by 4 (pixel size in bytes)
-    add $t6, $a1, $t6       # Address of output pixel
-    sb $t9, 0($t6)          # Store pixel value in output buffer
+    sb $t3, 0($a1)           # Store pixel in output buffer (byte store)
+    j jump_pixel
 
-skip_pixel:
-    addi $t0, $t0, 1        # Increment x (column index)
-    j inner_loop            # Repeat for next column
+Skip_Pixel:
+	li $t3, 0
+	sb $t3, ($a1)
+	j jump_pixel
 
-next_row:
-    addi $t1, $t1, 1        # Increment y (row index)
-    j outer_loop            # Repeat for next row
+jump_pixel:
+    addi $t7, $t7, 1         # Increment x (column index)
+    addi $a1, $a1, 1
+    j Inner_Loop             # Repeat for next column
 
-done_transform:
+Next_Row:
+    addi $t6, $t6, 1         # Increment y (row index)
+    j Outer_Loop             # Repeat for next row
+
+Exit_Loop:
 ############################### Part 2: your code ends here  ##
 jr $ra
 ###############################################################
